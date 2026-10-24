@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>像素勇士：暗影征途</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { width: 100%; height: 100%; background: #07070c; overflow: hidden; font-family: 'Courier New', monospace; }
+  #wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; background: #000; border: 2px solid #2a2a4a; }
+  #hud { position: fixed; inset: 0; pointer-events: none; }
+  .btn { pointer-events: auto; position: absolute; background: rgba(40,40,70,0.65); border: 2px solid #6a6aa0; color: #e0e0ff; border-radius: 10px; user-select: none; display: flex; align-items: center; justify-content: center; font-weight: bold; touch-action: none; }
+  .btn:active { background: rgba(100,100,180,0.85); }
+  #pad, #act { display: none; }
+  @media (hover: none) and (pointer: coarse) { #pad, #act { display: block; } }
+  #dp-left { left: 16px; bottom: 24px; width: 64px; height: 64px; font-size: 24px; }
+  #dp-right { left: 96px; bottom: 24px; width: 64px; height: 64px; font-size: 24px; }
+  #bt-jump { right: 24px; bottom: 100px; width: 68px; height: 68px; border-radius: 50%; }
+  #bt-atk { right: 104px; bottom: 28px; width: 68px; height: 68px; border-radius: 50%; }
+  #bt-act { right: 24px; bottom: 20px; width: 60px; height: 60px; border-radius: 50%; }
+  #bt-inv { right: 12px; top: 12px; width: 44px; height: 44px; font-size: 13px; }
+  #connStatus { position: fixed; top: 6px; right: 10px; color: #80c0ff; font: 12px monospace; z-index: 10; }
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="game" width="960" height="540"></canvas></div>
+<div id="hud">
+  <div id="pad">
+    <div class="btn" id="dp-left">◀</div>
+    <div class="btn" id="dp-right">▶</div>
+  </div>
+  <div id="act">
+    <div class="btn" id="bt-inv">背包</div>
+    <div class="btn" id="bt-jump">跳</div>
+    <div class="btn" id="bt-atk">攻</div>
+    <div class="btn" id="bt-act">互动</div>
+  </div>
+</div>
+<div id="connStatus">连接中...</div>
+<script src="sprites.js"></script>
+<script src="render.js"></script>
+<script src="render_world.js"></script>
+<script src="ui.js"></script>
+<script src="client.js"></script>
+</body>
+</html>

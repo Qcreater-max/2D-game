@@ -1,0 +1,179 @@
+/* ============================================================
+ * 客户端：采集按键 → 发给服务器 → 接收状态 → 绘制
+ * 游戏规则全部在 Python 后端（game_engine.py），这里只负责输入和显示。
+ *
+ * 按键（每个功能只绑定一类键，互不冲突）：
+ *   移动 A/D 或 ←/→      跳跃 W/↑/空格      下穿平台 S/↓ + 跳跃
+ *   攻击 J 或鼠标左键     互动 E（宝箱 / 铁匠 / 传送门）
+ *   背包 I      战绩 Tab/C      返回/关闭 Esc
+ *   菜单与面板中：↑↓ 选择，←→ 切页，Enter/空格/J 确认
+ * ============================================================ */
+
+const W = 960, H = 540;
+const WEAK_MULT = 1.5, RESIST_MULT = 0.5;   // 与 game_data.py 一致，只用于卡片上显示百分比
+// 武器 / 盔甲 / 元素 / 怪物图鉴都由服务器在 'level' 消息里下发（game_data.CATALOG），
+// 这里只放引用，收到数据后原地填充，其他文件可以直接用。
+const WEAPONS = [], ARMORS = [], ELEMENTS = {}, ENEMY_INFO = {};
+function applyCatalog(c) {
+  if (!c) return;
+  WEAPONS.length = 0; WEAPONS.push(...c.weapons);
+  ARMORS.length = 0; ARMORS.push(...c.armors);
+  Object.keys(ELEMENTS).forEach(k => delete ELEMENTS[k]); Object.assign(ELEMENTS, c.elements);
+  Object.keys(ENEMY_INFO).forEach(k => delete ENEMY_INFO[k]); Object.assign(ENEMY_INFO, c.enemies);
+}
+
+// ---- 输入 ----
+const KEYS = ['left', 'right', 'up', 'down', 'jump', 'attack', 'interact', 'confirm', 'inv', 'stats', 'escape'];
+const input = {};
+KEYS.forEach(k => input[k] = false);
+
+// 键盘 code → 触发的逻辑按键
+const KEYMAP = {
+  KeyA: ['left'], ArrowLeft: ['left'],
+  KeyD: ['right'], ArrowRight: ['right'],
+  KeyW: ['up', 'jump'], ArrowUp: ['up', 'jump'],
+  KeyS: ['down'], ArrowDown: ['down'],
+  Space: ['jump', 'confirm'],
+  Enter: ['confirm'], NumpadEnter: ['confirm'],
+  KeyJ: ['attack'],
+  KeyE: ['interact'],
+  KeyI: ['inv'],
+  Tab: ['stats'], KeyC: ['stats'],
+  Escape: ['escape'],
+};
+const heldCodes = new Set();
+
+function recompute() {
+  KEYS.forEach(k => input[k] = false);
+  heldCodes.forEach(c => (KEYMAP[c] || []).forEach(k => input[k] = true));
+  touchHeld.forEach(k => input[k] = true);
+  if (mouseAttack) input.attack = true;
+  sendInput();
+}
+input.aim = null;     // 鼠标瞄准位置 [x, y]，不瞄准时为 null
+
+window.addEventListener('keydown', e => {
+  if (!KEYMAP[e.code]) return;
+  e.preventDefault();
+  if (e.repeat) return;
+  heldCodes.add(e.code);
+  recompute();
+});
+window.addEventListener('keyup', e => {
+  if (!KEYMAP[e.code]) return;
+  e.preventDefault();
+  heldCodes.delete(e.code);
+  recompute();
+});
+window.addEventListener('blur', () => { heldCodes.clear(); touchHeld.clear(); mouseAttack = false; input.aim = null; recompute(); });
+
+// 鼠标左键攻击（只响应画布，避免点触屏按钮时误触）。
+// 按住期间持续上报鼠标在画面里的位置，服务端据此决定远程武器的发射方向；
+// 画布被 CSS 缩放过，所以要按显示尺寸换算回 960x540 的游戏坐标。
+let mouseAttack = false;
+let mouse = null;         // 鼠标当前的游戏坐标 {x, y}，用来画准星
+const gameCanvas = document.getElementById('game');
+
+function mousePos(e) {
+  const r = gameCanvas.getBoundingClientRect();
+  return { x: (e.clientX - r.left) * (W / r.width), y: (e.clientY - r.top) * (H / r.height) };
+}
+function sendAim() {
+  // 只在按住左键时才瞄准；松开后发送 null，让角色回到"按朝向发射"
+  input.aim = mouseAttack && mouse ? [Math.round(mouse.x), Math.round(mouse.y)] : null;
+  sendInput();
+}
+gameCanvas.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  mouse = mousePos(e); mouseAttack = true; recompute(); sendAim();
+});
+window.addEventListener('mousemove', e => {
+  mouse = mousePos(e);
+  if (mouseAttack && performance.now() - lastAimSend > 30) { lastAimSend = performance.now(); sendAim(); }
+});
+let lastAimSend = 0;
+window.addEventListener('mouseup', e => {
+  if (e.button === 0 && mouseAttack) { mouseAttack = false; recompute(); sendAim(); }
+});
+gameCanvas.addEventListener('contextmenu', e => e.preventDefault());
+
+// 触屏按钮
+const touchHeld = new Set();
+function bindBtn(id, ...keys) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const on = e => { e.preventDefault(); keys.forEach(k => touchHeld.add(k)); recompute(); };
+  const off = e => { e.preventDefault(); keys.forEach(k => touchHeld.delete(k)); recompute(); };
+  ['touchstart', 'mousedown'].forEach(t => el.addEventListener(t, on, { passive: false }));
+  ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(t => el.addEventListener(t, off, { passive: false }));
+}
+bindBtn('dp-left', 'left'); bindBtn('dp-right', 'right');
+bindBtn('bt-jump', 'jump', 'confirm'); bindBtn('bt-atk', 'attack');
+bindBtn('bt-act', 'interact'); bindBtn('bt-inv', 'inv');
+
+// ---- WebSocket ----
+let ws = null;
+let state = null;        // 最新动态状态
+let level = null;        // 当前关卡的静态数据（平台、传送门、铁匠铺）
+const connStatus = document.getElementById('connStatus');
+
+function sendInput() {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(input));
+}
+
+function connect() {
+  // WebSocket 端口 = 页面端口 + 1（默认 8080 → 8081），换端口启动时无需改代码
+  const wsPort = (parseInt(location.port, 10) || 80) + 1;
+  ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:${wsPort}`);
+  ws.onopen = () => {
+    connStatus.textContent = '● 已连接';
+    connStatus.style.color = '#80ff80';
+    sendInput();
+  };
+  ws.onmessage = ev => {
+    let m;
+    try { m = JSON.parse(ev.data); } catch (_) { return; }
+    if (m.t === 'level') { applyCatalog(m.catalog); level = m; resetFx(); }
+    else if (m.t === 'state') {
+      if (!level || level.seq !== m.seq) { ws.send(JSON.stringify({ need_level: true })); return; }
+      state = m;
+    }
+  };
+  ws.onclose = () => {
+    connStatus.textContent = '● 已断开，重连中...';
+    connStatus.style.color = '#ff8080';
+    state = null;
+    setTimeout(connect, 1500);
+  };
+}
+connect();
+
+// ---- 主循环 ----
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+function fitCanvas() {
+  const s = Math.min(window.innerWidth / W, window.innerHeight / H);
+  canvas.style.width = Math.floor(W * s) + 'px';
+  canvas.style.height = Math.floor(H * s) + 'px';
+}
+window.addEventListener('resize', fitCanvas);
+fitCanvas();
+
+function frame() {
+  try {
+    if (state && level) { drawFrame(state, level); drawCrosshair(state); }
+    else drawConnecting();
+  } catch (err) {
+    // 绘制出错时不要让循环停掉，并把错误显示出来方便排查
+    console.error(err);
+    ctx.restore();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = 'rgba(0,0,0,0.85)'; ctx.fillRect(0, 0, W, 60);
+    ctx.fillStyle = '#ff6060'; ctx.font = '13px monospace'; ctx.textAlign = 'left';
+    ctx.fillText('渲染错误: ' + (err && err.stack ? err.stack.split('\n').slice(0, 2).join(' | ') : err), 10, 24);
+  }
+  requestAnimationFrame(frame);
+}
+frame();
