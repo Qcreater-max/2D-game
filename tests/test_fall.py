@@ -146,18 +146,35 @@ class NormalMovementIsUnaffectedTests(unittest.TestCase):
         run(e, 90, right=True)                 # 只走起点这一段平地，不会遇到深坑
         self.assertEqual(p['hp'], 9999)
 
-    def test_real_level_walk_off_platform_is_safe(self):
-        """在真实关卡里：跳上最高的平台再走下来，不应摔伤（所有平台都不到安全高度）。"""
+    def walk_off_real_platform(self, x, y):
+        """在森林真实地形里，站到平台 (x, y) 上向右走下来，返回损失的生命。"""
         e = new_engine('forest', clean=False)
         p = e.player
         p['hp'] = p['maxHp'] = 9999
-        for x, y, w in [pl for pl in [(380, 330, 110)]]:
-            p['x'], p['y'], p['vy'] = x + 20.0, float(y - p['h'] - 0.5), 0.0
-            p['onGround'] = True
-            p['airTop'] = p['y']
-            run(e, 60, right=True)
-            run(e, 80)
-        self.assertEqual(p['hp'], 9999)
+        p['x'], p['y'], p['vy'] = x + 20.0, float(y - p['h'] - 0.5), 0.0
+        p['onGround'] = True
+        p['airTop'] = p['y']
+        run(e, 60, right=True)
+        run(e, 80)
+        return 9999 - p['hp']
+
+    def test_real_level_low_platform_walk_off_is_safe(self):
+        """森林里 (200, 400) 的平台比地面高 80，没超过安全落差，走下来不应摔伤。"""
+        self.assertLessEqual(GROUND_Y - 400, SAFE_FALL)
+        self.assertEqual(self.walk_off_real_platform(200, 400), 0)
+
+    def test_real_level_high_platform_walk_off_hurts_but_is_bounded(self):
+        """森林里 (380, 330) 的平台比地面高 150，超过安全落差：按公式摔伤，但不致死、不超过上限。
+
+        之前这条测试假设"所有平台都不到安全高度"，与关卡数据不符：多数关卡都有 140~220 高的平台。
+        """
+        drop = GROUND_Y - 330
+        self.assertGreater(drop, SAFE_FALL)
+        lost = self.walk_off_real_platform(380, 330)
+        expected = (drop - SAFE_FALL) * FALL_PCT_PER_PX * 9999
+        self.assertGreater(lost, 0)
+        self.assertAlmostEqual(lost, expected, delta=expected * 0.1 + 2)    # 落差有 1~2 像素的取整误差
+        self.assertLessEqual(lost, int(9999 * FALL_MAX_PCT))
 
 
 class ResetTests(unittest.TestCase):

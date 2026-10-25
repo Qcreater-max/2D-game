@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<!-- 截图用:加载真实的渲染代码,用 state.js 里的固定快照出图,不连接服务器。 -->
+<html><head><meta charset="UTF-8"><style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}</style></head>
+<body>
+<canvas id="game" width="960" height="540"></canvas>
+<script>
+  const W = 960, H = 540, WEAK_MULT = 1.5, RESIST_MULT = 0.5;
+  const WEAPONS = [], ARMORS = [], ELEMENTS = {}, ENEMY_INFO = {};
+  function applyCatalog(c) {
+    WEAPONS.push(...c.weapons); ARMORS.push(...c.armors);
+    Object.assign(ELEMENTS, c.elements); Object.assign(ENEMY_INFO, c.enemies);
+  }
+  const ctx = document.getElementById('game').getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+</script>
+<script src="../../sprites.js"></script>
+<script src="../../render.js"></script>
+<script src="../../render_world.js"></script>
+<script src="../../ui.js"></script>
+<script src="state.js"></script>
+<script>
+  try {
+    applyCatalog(SNAPSHOT.level.catalog);
+    drawFrame(SNAPSHOT.state, SNAPSHOT.level);
+    document.title = 'done';
+  } catch (e) { document.body.insertAdjacentHTML('beforeend', '<pre style="color:#f66;position:fixed;top:0;font-size:13px">' + e.stack + '</pre>'); }
+</script>
+</body></html>

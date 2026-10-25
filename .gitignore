@@ -3,3 +3,8 @@ __pycache__/
 *.pyo
 .env
 node_modules/
+# 演示文稿相关:截图用的临时状态和浏览器配置目录
+presentation/harness/state.js
+presentation/.*-profile*/
+presentation/~$*
+presentation/*.pptx
