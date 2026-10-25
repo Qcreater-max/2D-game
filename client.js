@@ -122,9 +122,8 @@ function sendInput() {
 }
 
 function connect() {
-  // WebSocket 端口 = 页面端口 + 1（默认 8080 → 8081），换端口启动时无需改代码
-  const wsPort = (parseInt(location.port, 10) || 80) + 1;
-  ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:${wsPort}`);
+  // WebSocket 与页面同源同端口，路径 /ws；经 HTTPS 反向代理访问时自动使用 wss
+  ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
   ws.onopen = () => {
     connStatus.textContent = '● 已连接';
     connStatus.style.color = '#80ff80';
@@ -139,11 +138,15 @@ function connect() {
       state = m;
     }
   };
-  ws.onclose = () => {
-    connStatus.textContent = '● 已断开，重连中...';
-    connStatus.style.color = '#ff8080';
+  ws.onclose = ev => {
     state = null;
-    setTimeout(connect, 1500);
+    connStatus.style.color = '#ff8080';
+    // 1013 = 服务器已满，1008 = 同一网络连接过多：放慢重连，别反复冲击服务器
+    let delay = 1500;
+    if (ev.code === 1013) { connStatus.textContent = '● 服务器已满，稍后自动重试...'; delay = 10000; }
+    else if (ev.code === 1008) { connStatus.textContent = '● 当前网络连接数过多，稍后重试...'; delay = 10000; }
+    else connStatus.textContent = '● 已断开，重连中...';
+    setTimeout(connect, delay);
   };
 }
 connect();

@@ -226,19 +226,45 @@ class ParseAimTests(unittest.TestCase):
         self.assertIn('"aim"', s)
 
 
-class ServerMergeTests(unittest.TestCase):
-    def test_last_aiming_client_wins_and_none_is_ignored(self):
+class ServerSessionTests(unittest.TestCase):
+    def make(self):
         import server
-        a, b, c = object(), object(), object()
-        server.clients.clear()
-        server.clients[a] = {'aim': (10.0, 20.0)}
-        server.clients[b] = {'aim': None}
-        server.clients[c] = {'aim': (30.0, 40.0), 'attack': True}
-        out = server.merged_input()
-        self.assertEqual(out['aim'], (30.0, 40.0))
-        self.assertTrue(out['attack'])
-        server.clients.clear()
-        self.assertIsNone(server.merged_input()['aim'])
+        s = server.Session(object(), '127.0.0.1')
+        s.stamp = 0.0           # 测试用假时钟从 0 开始,和 handle(now=...) 对齐
+        return s
+
+    def test_sessions_are_independent(self):
+        a, b = self.make(), self.make()
+        a.handle(json.dumps({'attack': True, 'aim': [10, 20]}), now=0.0)
+        self.assertTrue(a.keys['attack'])
+        self.assertEqual(a.keys['aim'], (10.0, 20.0))
+        self.assertFalse(b.keys['attack'])
+        self.assertIsNone(b.keys['aim'])
+        self.assertIsNot(a.engine, b.engine)
+
+    def test_aim_null_clears_and_garbage_is_ignored(self):
+        s = self.make()
+        s.handle(json.dumps({'aim': [10, 20]}), now=0.0)
+        s.handle(json.dumps({'aim': None}), now=0.0)
+        self.assertIsNone(s.keys['aim'])
+        for bad in ('not json', '[1,2]', '"x"', '{"aim": [NaN, 1]}', '[' * 5000):
+            s.handle(bad, now=0.0)
+        self.assertIsNone(s.keys['aim'])
+
+    def test_need_level_sets_flag(self):
+        s = self.make()
+        s.handle(json.dumps({'need_level': True}), now=0.0)
+        self.assertTrue(s.want_level)
+
+    def test_rate_limit_drops_flood_then_recovers(self):
+        import server
+        s = self.make()
+        for _ in range(int(server.MSG_BURST) + 50):
+            s.handle(json.dumps({'left': True}), now=0.0)
+        s.handle(json.dumps({'left': False}), now=0.0)
+        self.assertTrue(s.keys['left'])             # 令牌耗尽后，这条被丢弃
+        s.handle(json.dumps({'left': False}), now=1.0)
+        self.assertFalse(s.keys['left'])            # 过了一秒令牌补充，恢复处理
 
 
 if __name__ == '__main__':

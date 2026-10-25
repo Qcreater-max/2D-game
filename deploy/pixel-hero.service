@@ -1,0 +1,29 @@
+# systemd 服务：/etc/systemd/system/pixel-hero.service
+# 游戏只监听本机 127.0.0.1:8080，由 Caddy 对外提供 HTTPS。
+[Unit]
+Description=Pixel Hero game server
+After=network.target
+
+[Service]
+Type=simple
+User=pixelhero
+Group=pixelhero
+WorkingDirectory=/opt/pixel-hero
+ExecStart=/opt/pixel-hero/venv/bin/python server.py --host 127.0.0.1 --port 8080 --trust-proxy --max-players 20 --max-per-ip 3 --allowed-origin https://game.example.com
+Restart=on-failure
+RestartSec=3
+
+# 沙箱：游戏只需要读自己的代码
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=512M
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target
