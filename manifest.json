@@ -1,0 +1,15 @@
+{
+  "name": "像素勇士:暗影征途",
+  "short_name": "像素勇士",
+  "description": "服务端权威的 2D 像素动作游戏,浏览器里直接玩",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#07070c",
+  "theme_color": "#0b0b16",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

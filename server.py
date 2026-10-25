@@ -27,7 +27,9 @@ from game_engine import GameEngine
 ROOT = os.path.dirname(os.path.abspath(__file__))
 WS_PATH = '/ws'
 STATIC_FILES = {'/': 'index.html', '/index.html': 'index.html'}
-STATIC_FILES.update({'/' + n: n for n in ('client.js', 'sprites.js', 'render.js', 'render_world.js', 'ui.js')})
+STATIC_FILES.update({'/' + n: n for n in ('client.js', 'sprites.js', 'render.js', 'render_world.js', 'ui.js',
+                                           'engine_data.js', 'engine_rng.js', 'engine_levels.js', 'engine.js', 'offline.js',
+                                           'manifest.json', 'sw.js', 'icons/icon-192.png', 'icons/icon-512.png')})
 
 MAX_MSG_BYTES = 1024            # 客户端消息只有按键和坐标，1KB 足够
 MSG_RATE, MSG_BURST = 120.0, 60.0   # 每连接每秒最多处理 120 条消息，允许 60 条突发

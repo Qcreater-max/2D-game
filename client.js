@@ -118,6 +118,7 @@ let level = null;        // 当前关卡的静态数据（平台、传送门、�
 const connStatus = document.getElementById('connStatus');
 
 function sendInput() {
+  if (window.OFFLINE) return;               // 离线模式：本地引擎直接读取 input，不需要发送
   if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(input));
 }
 
@@ -149,7 +150,7 @@ function connect() {
     setTimeout(connect, delay);
   };
 }
-connect();
+if (!window.OFFLINE) connect();
 
 // ---- 主循环 ----
 const canvas = document.getElementById('game');
@@ -165,6 +166,7 @@ window.addEventListener('resize', fitCanvas);
 fitCanvas();
 
 function frame() {
+  if (window.OFFLINE) return;               // 离线模式：由 offline.js 用自己的循环绘制
   try {
     if (state && level) { drawFrame(state, level); drawCrosshair(state); }
     else drawConnecting();
