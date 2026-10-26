@@ -9,16 +9,20 @@
  *   菜单与面板中：↑↓ 选择，←→ 切页，Enter/空格/J 确认
  * ============================================================ */
 
-const W = 960, H = 540;
-const WEAK_MULT = 1.5, RESIST_MULT = 0.5;   // 与 game_data.py 一致，只用于卡片上显示百分比
-// 武器 / 盔甲 / 元素 / 怪物图鉴都由服务器在 'level' 消息里下发（game_data.CATALOG），
-// 这里只放引用，收到数据后原地填充，其他文件可以直接用。
-const WEAPONS = [], ARMORS = [], ELEMENTS = {}, ENEMY_INFO = {};
+// W/H、WEAK_MULT/RESIST_MULT、WEAPONS、ARMORS、ELEMENTS 已由 engine_data.js 用 const 声明。
+// 所有 <script> 共用同一个全局词法作用域，这里再声明一次会直接抛
+// "Identifier 'W' has already been declared"，导致整个 client.js 不执行、页面一直停在"连接中"。
+const ENEMY_INFO = {};   // 怪物图鉴：只有客户端需要，由下发的 catalog 填充
 function applyCatalog(c) {
   if (!c) return;
+  // catalog 里的武器/盔甲数组是副本；离线模式下 elements 就是 ELEMENTS 本身，
+  // 不能"先清空再赋值"，否则会把数据源一起清掉。
   WEAPONS.length = 0; WEAPONS.push(...c.weapons);
   ARMORS.length = 0; ARMORS.push(...c.armors);
-  Object.keys(ELEMENTS).forEach(k => delete ELEMENTS[k]); Object.assign(ELEMENTS, c.elements);
+  if (c.elements !== ELEMENTS) {
+    Object.keys(ELEMENTS).forEach(k => delete ELEMENTS[k]);
+    Object.assign(ELEMENTS, c.elements);
+  }
   Object.keys(ENEMY_INFO).forEach(k => delete ENEMY_INFO[k]); Object.assign(ENEMY_INFO, c.enemies);
 }
 
@@ -150,7 +154,9 @@ function connect() {
     setTimeout(connect, delay);
   };
 }
-if (!window.OFFLINE) connect();
+// 默认离线运行（与 offline.js 的判定一致）：只有显式 ?online=1 才连服务器。
+// 之前用 !window.OFFLINE 判断是无效的——offline.js 在 client.js 之后才加载。
+if (new URLSearchParams(location.search).has('online')) connect();
 
 // ---- 主循环 ----
 const canvas = document.getElementById('game');
