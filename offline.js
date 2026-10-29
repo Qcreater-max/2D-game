@@ -18,6 +18,32 @@
   conn.textContent = '● 本地运行（离线）';
   conn.style.color = '#ffe080';
 
+  // ---- 菜单：直接点模式卡片 ----
+  // 卡片坐标和 ui.js 的 drawMenu 保持一致（逻辑分辨率 960x540）。
+  const MENU_CARDS = [[230, 236, 240, 74], [490, 236, 240, 74]];
+  const menuCanvas = document.getElementById('game');
+
+  function menuCardAt(clientX, clientY) {
+    const r = menuCanvas.getBoundingClientRect();
+    const x = (clientX - r.left) * (960 / r.width);
+    const y = (clientY - r.top) * (540 / r.height);
+    for (let i = 0; i < MENU_CARDS.length; i++) {
+      const c = MENU_CARDS[i];
+      if (x >= c[0] && x <= c[0] + c[2] && y >= c[1] && y <= c[1] + c[3]) return i;
+    }
+    return -1;
+  }
+  function onMenuTap(e) {
+    if (engine.game.state !== 'menu') return;
+    const t = e.changedTouches ? e.changedTouches[0] : e;
+    const i = menuCardAt(t.clientX, t.clientY);
+    if (i < 0) return;
+    engine.game.menuIdx = i;
+    engine.new_game(MODES[i]);
+  }
+  menuCanvas.addEventListener('touchstart', onMenuTap, { passive: true });
+  menuCanvas.addEventListener('mousedown', onMenuTap);
+
   // 固定 60 帧时间步长，与服务器的逻辑帧率一致
   const STEP = 1000 / 60;
   let last = performance.now(), acc = 0;

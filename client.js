@@ -46,11 +46,13 @@ const KEYMAP = {
   Escape: ['escape'],
 };
 const heldCodes = new Set();
+const stickKeys = { left: false, right: false, up: false, down: false };   // 摇杆当前方向
 
 function recompute() {
   KEYS.forEach(k => input[k] = false);
   heldCodes.forEach(c => (KEYMAP[c] || []).forEach(k => input[k] = true));
   touchHeld.forEach(k => input[k] = true);
+  for (const k in stickKeys) if (stickKeys[k]) input[k] = true;
   if (mouseAttack) input.attack = true;
   sendInput();
 }
@@ -136,16 +138,21 @@ async function tryLandscape() {
   } catch (_) { /* iOS / 微信内置浏览器通常不支持 */ }
   return locked;
 }
+function isWeChat() {
+  return /MicroMessenger/i.test(navigator.userAgent || '');
+}
 function maybeLandscape() {
   if (landscapeTried || !window.IS_TOUCH) return;
   if (!window.matchMedia || !window.matchMedia('(orientation: portrait)').matches) return;
   landscapeTried = true;
+  if (isWeChat()) { rotateHintText('微信内请点右上角 → 在浏览器打开'); return; }
   tryLandscape().then(ok => { if (!ok) rotateHintText('请关掉竖屏锁定后横拿手机'); });
 }
 const rotateHint = document.getElementById('rotateHint');
 if (rotateHint) {
   rotateHint.addEventListener('click', () => {
     landscapeTried = true;
+    if (isWeChat()) { rotateHintText('微信内请点右上角 → 在浏览器打开'); return; }
     tryLandscape().then(ok => { if (!ok) rotateHintText('请关掉竖屏锁定后横拿手机'); });
   });
 }
@@ -158,10 +165,69 @@ function bindBtn(id, ...keys) {
   ['touchstart', 'mousedown'].forEach(t => el.addEventListener(t, on, { passive: false }));
   ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(t => el.addEventListener(t, off, { passive: false }));
 }
-bindBtn('dp-left', 'left'); bindBtn('dp-right', 'right');
-bindBtn('dp-up', 'up'); bindBtn('dp-down', 'down');
 bindBtn('bt-jump', 'jump', 'confirm'); bindBtn('bt-atk', 'attack');
 bindBtn('bt-act', 'interact'); bindBtn('bt-inv', 'inv'); bindBtn('bt-stats', 'stats');
+
+// ---- 摇杆 ----
+// 在圆圈里拖动：左右控制移动，上下用于菜单 / 商店 / 背包里的选择。
+const stickBase = document.getElementById('stick');
+const stickKnob = document.getElementById('stick-knob');
+let stickId = null;
+function stickMoveTo(clientX, clientY) {
+  const r = stickBase.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  let dx = clientX - cx, dy = clientY - cy;
+  const max = r.width / 2 - 8;
+  const d = Math.hypot(dx, dy) || 1;
+  if (d > max) { dx = dx / d * max; dy = dy / d * max; }
+  if (stickKnob) stickKnob.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px)';
+  const dead = max * 0.3;
+  stickKeys.left = dx < -dead; stickKeys.right = dx > dead;
+  stickKeys.up = dy < -dead; stickKeys.down = dy > dead;
+  recompute();
+}
+function stickRelease() {
+  if (stickKnob) stickKnob.style.transform = 'translate(0,0)';
+  stickKeys.left = stickKeys.right = stickKeys.up = stickKeys.down = false;
+  recompute();
+}
+if (stickBase) {
+  const start = e => {
+    const t = e.changedTouches ? e.changedTouches[0] : e;
+    stickId = e.changedTouches ? t.identifier : 'mouse';
+    e.preventDefault();
+    maybeLandscape();
+    stickMoveTo(t.clientX, t.clientY);
+  };
+  const move = e => {
+    if (stickId === null) return;
+    if (e.changedTouches) {
+      const t = Array.prototype.find.call(e.changedTouches, c => c.identifier === stickId);
+      if (!t) return;
+      e.preventDefault();
+      stickMoveTo(t.clientX, t.clientY);
+    } else {
+      e.preventDefault();
+      stickMoveTo(e.clientX, e.clientY);
+    }
+  };
+  const end = e => {
+    if (stickId === null) return;
+    if (e.changedTouches) {
+      const t = Array.prototype.find.call(e.changedTouches, c => c.identifier === stickId);
+      if (!t) return;
+    }
+    stickId = null;
+    stickRelease();
+  };
+  stickBase.addEventListener('touchstart', start, { passive: false });
+  stickBase.addEventListener('touchmove', move, { passive: false });
+  stickBase.addEventListener('touchend', end);
+  stickBase.addEventListener('touchcancel', end);
+  stickBase.addEventListener('mousedown', start);
+  window.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', end);
+}
 
 // ---- WebSocket ----
 let ws = null;

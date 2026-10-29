@@ -25,16 +25,14 @@
   @media (hover: none) and (pointer: coarse) { #pad, #act { display: block; } }
   /* 部分安卓浏览器会谎报 hover/pointer，JS 检测到触摸时也显示虚拟按键 */
   body.touch #pad, body.touch #act { display: block; }
-  #dp-left { left: calc(16px + env(safe-area-inset-left)); bottom: calc(24px + env(safe-area-inset-bottom)); width: 64px; height: 64px; font-size: 24px; }
-  #dp-right { left: calc(96px + env(safe-area-inset-left)); bottom: calc(24px + env(safe-area-inset-bottom)); width: 64px; height: 64px; font-size: 24px; }
+  /* 摇杆：拖动方向 → 左/右/上/下（上下用于菜单和商店选择） */
+  #stick { position: absolute; left: calc(18px + env(safe-area-inset-left)); bottom: calc(26px + env(safe-area-inset-bottom)); width: 132px; height: 132px; border-radius: 50%; background: rgba(40,40,70,0.45); border: 2px solid #6a6aa0; touch-action: none; pointer-events: auto; }
+  #stick-knob { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; background: rgba(110,110,190,0.7); border: 2px solid #9a9ad0; will-change: transform; }
   #bt-jump { right: calc(24px + env(safe-area-inset-right)); bottom: calc(100px + env(safe-area-inset-bottom)); width: 68px; height: 68px; border-radius: 50%; }
   #bt-atk { right: calc(104px + env(safe-area-inset-right)); bottom: calc(28px + env(safe-area-inset-bottom)); width: 68px; height: 68px; border-radius: 50%; }
   #bt-act { right: calc(24px + env(safe-area-inset-right)); bottom: calc(20px + env(safe-area-inset-bottom)); width: 60px; height: 60px; border-radius: 50%; }
   #bt-inv { right: calc(12px + env(safe-area-inset-right)); top: calc(12px + env(safe-area-inset-top)); width: 44px; height: 44px; font-size: 13px; }
   #bt-stats { right: calc(12px + env(safe-area-inset-right)); top: calc(64px + env(safe-area-inset-top)); width: 44px; height: 44px; font-size: 12px; }
-  /* 菜单、商店、背包里要上下选择；手机上原来没有这两个键，物品选不了 */
-  #dp-up { left: calc(16px + env(safe-area-inset-left)); bottom: calc(104px + env(safe-area-inset-bottom)); width: 64px; height: 44px; font-size: 16px; }
-  #dp-down { left: calc(96px + env(safe-area-inset-left)); bottom: calc(104px + env(safe-area-inset-bottom)); width: 64px; height: 44px; font-size: 16px; }
   #connStatus { position: fixed; top: calc(6px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right)); color: #80c0ff; font: 12px monospace; z-index: 10; }
   /* 触屏上把状态文字挪到底部中间，别和右上角的目标面板、背包按钮打架 */
   @media (hover: none) and (pointer: coarse) {
@@ -52,10 +50,7 @@
 <div id="wrap"><canvas id="game" width="960" height="540"></canvas></div>
 <div id="hud">
   <div id="pad">
-    <div class="btn" id="dp-up">▲</div>
-    <div class="btn" id="dp-down">▼</div>
-    <div class="btn" id="dp-left">◀</div>
-    <div class="btn" id="dp-right">▶</div>
+    <div id="stick"><div id="stick-knob"></div></div>
   </div>
   <div id="act">
     <div class="btn" id="bt-inv">背包</div>
