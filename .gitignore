@@ -8,3 +8,6 @@ presentation/harness/state.js
 presentation/.*-profile*/
 presentation/~$*
 presentation/*.pptx
+# 静态站点构建产物: dist/ 只用于发布到 GitHub Pages
+dist/
+pixel-hero-web.zip

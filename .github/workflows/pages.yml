@@ -1,0 +1,46 @@
+name: Deploy web build to GitHub Pages
+
+# 每次推送到 main 就把纯前端版本发布到 Pages。
+# 只上传 index.html / 脚本 / 图标 / manifest / sw.js，Python 源码不会进产物。
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect static files
+        run: |
+          mkdir -p _site/icons
+          cp index.html client.js render.js render_world.js sprites.js ui.js \
+             engine_data.js engine_rng.js engine_levels.js engine.js offline.js \
+             manifest.json sw.js _site/
+          cp icons/icon-192.png icons/icon-512.png _site/icons/
+          ls -R _site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
