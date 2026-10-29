@@ -41,9 +41,10 @@
     #connStatus { top: auto; right: auto; left: 50%; bottom: calc(4px + env(safe-area-inset-bottom)); transform: translateX(-50%); font-size: 11px; }
   }
   body.touch #connStatus { top: auto; right: auto; left: 50%; bottom: calc(4px + env(safe-area-inset-bottom)); transform: translateX(-50%); font-size: 11px; }
-  /* 竖屏提示：5 秒后淡出，不挡操作 */
-  #rotateHint { display: none; position: fixed; left: 50%; top: calc(10px + env(safe-area-inset-top)); transform: translateX(-50%); padding: 6px 12px; border-radius: 999px; background: rgba(20,20,40,0.85); border: 1px solid #3a3a6a; color: #c0c8ff; font: 12px monospace; pointer-events: none; z-index: 11; white-space: nowrap; }
-  @media (orientation: portrait) and (pointer: coarse) { #rotateHint { display: block; animation: hintFade 0.6s ease 5s forwards; } }
+  /* 竖屏提示：点它可以尝试自动横屏，5 秒后淡出 */
+  #rotateHint { display: none; position: fixed; left: 50%; top: calc(10px + env(safe-area-inset-top)); transform: translateX(-50%); padding: 8px 14px; border-radius: 999px; background: rgba(20,20,40,0.9); border: 1px solid #5a5a9a; color: #d0d8ff; font: 12px monospace; pointer-events: auto; cursor: pointer; -webkit-user-select: none; user-select: none; z-index: 12; white-space: nowrap; }
+  #rotateHint:active { background: rgba(70,70,130,0.95); }
+  @media (orientation: portrait) and (pointer: coarse) { #rotateHint { display: block; } }
   @keyframes hintFade { to { opacity: 0; } }
 </style>
 </head>
@@ -65,7 +66,7 @@
   </div>
 </div>
 <div id="connStatus">连接中...</div>
-<div id="rotateHint">↻ 建议横屏游玩</div>
+<div id="rotateHint">↻ 点此横屏</div>
 <script src="sprites.js"></script>
 <script src="render.js"></script>
 <script src="render_world.js"></script>

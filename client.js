@@ -107,10 +107,53 @@ gameCanvas.addEventListener('contextmenu', e => e.preventDefault());
 window.IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 if (window.IS_TOUCH) document.body.classList.add('touch');
 const touchHeld = new Set();
+
+// ---- 横屏 ----
+// 普通网页没法强制旋转设备：Android 可以在全屏后锁定方向，iOS 不支持锁方向，
+// 只能提示用户关掉系统里的"竖屏锁定"再把手机横过来。
+let landscapeTried = false;
+function rotateHintText(msg) {
+  const el = document.getElementById('rotateHint');
+  if (!el) return;
+  if (!el.dataset.orig) el.dataset.orig = el.textContent;
+  el.textContent = msg;
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => { el.textContent = el.dataset.orig; }, 4000);
+}
+async function tryLandscape() {
+  let locked = false;
+  try {
+    const root = document.documentElement;
+    if (!document.fullscreenElement && root.requestFullscreen) {
+      await root.requestFullscreen().catch(() => {});
+    }
+  } catch (_) { /* 不支持全屏 */ }
+  try {
+    if (screen.orientation && typeof screen.orientation.lock === 'function') {
+      await screen.orientation.lock('landscape');
+      locked = true;
+    }
+  } catch (_) { /* iOS / 微信内置浏览器通常不支持 */ }
+  return locked;
+}
+function maybeLandscape() {
+  if (landscapeTried || !window.IS_TOUCH) return;
+  if (!window.matchMedia || !window.matchMedia('(orientation: portrait)').matches) return;
+  landscapeTried = true;
+  tryLandscape().then(ok => { if (!ok) rotateHintText('请关掉竖屏锁定后横拿手机'); });
+}
+const rotateHint = document.getElementById('rotateHint');
+if (rotateHint) {
+  rotateHint.addEventListener('click', () => {
+    landscapeTried = true;
+    tryLandscape().then(ok => { if (!ok) rotateHintText('请关掉竖屏锁定后横拿手机'); });
+  });
+}
+
 function bindBtn(id, ...keys) {
   const el = document.getElementById(id);
   if (!el) return;
-  const on = e => { e.preventDefault(); keys.forEach(k => touchHeld.add(k)); recompute(); };
+  const on = e => { e.preventDefault(); maybeLandscape(); keys.forEach(k => touchHeld.add(k)); recompute(); };
   const off = e => { e.preventDefault(); keys.forEach(k => touchHeld.delete(k)); recompute(); };
   ['touchstart', 'mousedown'].forEach(t => el.addEventListener(t, on, { passive: false }));
   ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(t => el.addEventListener(t, off, { passive: false }));
