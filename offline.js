@@ -18,6 +18,12 @@
   conn.textContent = '● 本地运行（离线）';
   conn.style.color = '#ffe080';
 
+  // 退出本局：回到主菜单，丢掉当前进度（游戏循环继续跑，只是状态回到 menu）
+  window.exitGame = function () {
+    engine.to_menu();
+    if (window.resetInput) window.resetInput();
+  };
+
   // ---- 菜单：直接点模式卡片 ----
   // 卡片坐标和 ui.js 的 drawMenu 保持一致（逻辑分辨率 960x540）。
   const MENU_CARDS = [[230, 236, 240, 74], [490, 236, 240, 74]];

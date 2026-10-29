@@ -28,9 +28,11 @@
   /* 摇杆：拖动方向 → 左/右/上/下（上下用于菜单和商店选择） */
   #stick { position: absolute; left: calc(18px + env(safe-area-inset-left)); bottom: calc(26px + env(safe-area-inset-bottom)); width: 132px; height: 132px; border-radius: 50%; background: rgba(40,40,70,0.45); border: 2px solid #6a6aa0; touch-action: none; pointer-events: auto; }
   #stick-knob { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; background: rgba(110,110,190,0.7); border: 2px solid #9a9ad0; will-change: transform; }
-  #bt-jump { right: calc(24px + env(safe-area-inset-right)); bottom: calc(100px + env(safe-area-inset-bottom)); width: 68px; height: 68px; border-radius: 50%; }
-  #bt-atk { right: calc(104px + env(safe-area-inset-right)); bottom: calc(28px + env(safe-area-inset-bottom)); width: 68px; height: 68px; border-radius: 50%; }
-  #bt-act { right: calc(24px + env(safe-area-inset-right)); bottom: calc(20px + env(safe-area-inset-bottom)); width: 60px; height: 60px; border-radius: 50%; }
+  #bt-jump { right: calc(20px + env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom)); width: 76px; height: 76px; border-radius: 50%; }
+  #bt-atk { right: calc(108px + env(safe-area-inset-right)); bottom: calc(26px + env(safe-area-inset-bottom)); width: 68px; height: 68px; border-radius: 50%; }
+  #bt-act { right: calc(20px + env(safe-area-inset-right)); bottom: calc(106px + env(safe-area-inset-bottom)); width: 60px; height: 60px; border-radius: 50%; }
+  #bt-quit { right: calc(12px + env(safe-area-inset-right)); top: calc(116px + env(safe-area-inset-top)); width: 44px; height: 44px; font-size: 12px; }
+  #bt-quit.armed { background: rgba(170,40,40,0.9); border-color: #ff9090; color: #fff; }
   #bt-inv { right: calc(12px + env(safe-area-inset-right)); top: calc(12px + env(safe-area-inset-top)); width: 44px; height: 44px; font-size: 13px; }
   #bt-stats { right: calc(12px + env(safe-area-inset-right)); top: calc(64px + env(safe-area-inset-top)); width: 44px; height: 44px; font-size: 12px; }
   #connStatus { position: fixed; top: calc(6px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right)); color: #80c0ff; font: 12px monospace; z-index: 10; }
@@ -55,6 +57,7 @@
   <div id="act">
     <div class="btn" id="bt-inv">背包</div>
     <div class="btn" id="bt-stats">战绩</div>
+    <div class="btn" id="bt-quit">退出</div>
     <div class="btn" id="bt-jump">跳</div>
     <div class="btn" id="bt-atk">攻</div>
     <div class="btn" id="bt-act">互动</div>

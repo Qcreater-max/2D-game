@@ -229,6 +229,40 @@ if (stickBase) {
   window.addEventListener('mouseup', end);
 }
 
+// ---- 重置输入 / 退出 ----
+function resetInput() {
+  heldCodes.clear();
+  touchHeld.clear();
+  stickId = null;
+  if (stickKnob) stickKnob.style.transform = 'translate(0,0)';
+  stickKeys.left = stickKeys.right = stickKeys.up = stickKeys.down = false;
+  mouseAttack = false;
+  input.aim = null;
+  recompute();
+}
+window.resetInput = resetInput;
+
+// 退出：第一次点变成"确认?"，3 秒内再点一次才真的退出，避免误触
+const quitBtn = document.getElementById('bt-quit');
+let quitTimer = null;
+function resetQuit() {
+  if (quitTimer) { clearTimeout(quitTimer); quitTimer = null; }
+  if (quitBtn) { quitBtn.textContent = '退出'; quitBtn.classList.remove('armed'); }
+}
+if (quitBtn) {
+  quitBtn.addEventListener('click', () => {
+    if (quitTimer) {
+      resetQuit();
+      if (window.OFFLINE && typeof window.exitGame === 'function') window.exitGame();
+      else location.reload();        // 联网模式没有本地引擎，重载页面即退出本局
+      return;
+    }
+    quitBtn.textContent = '确认?';
+    quitBtn.classList.add('armed');
+    quitTimer = setTimeout(resetQuit, 3000);
+  });
+}
+
 // ---- WebSocket ----
 let ws = null;
 let state = null;        // 最新动态状态
