@@ -30,6 +30,11 @@ jobs:
              manifest.json sw.js _site/
           cp icons/icon-192.png icons/icon-512.png _site/icons/
           ls -R _site
+      - name: Stamp service worker cache with the commit
+        run: |
+          # 每次发布都换一个缓存名，老玩家不会卡在旧脚本上（仓库里的 sw.js 不用再手改版本号）
+          sed -i "s/const CACHE = '[^']*';/const CACHE = 'pixel-hero-${GITHUB_SHA::7}';/" _site/sw.js
+          grep "const CACHE" _site/sw.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
