@@ -70,7 +70,7 @@ function drawHUD(s) {
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(bx - 2.5, 17.5, bw + 5, 19);
     txt('暗影巫师' + (s.boss.enraged ? '  · 狂暴' : ''), W / 2, 50, '#e8c0ff', 'bold 12px monospace', 'center');
   }
-  txt('A/D 移动  W/空格 跳  J 攻击  E 互动  I 背包  Tab 战绩', 12, H - 10, 'rgba(255,255,255,0.65)', '11px monospace');
+  if (!window.IS_TOUCH) txt('A/D 移动  W/空格 跳  J 攻击  E 互动  I 背包  Tab 战绩', 12, H - 10, 'rgba(255,255,255,0.65)', '11px monospace');
   if (s.card) drawMonsterCard(s.card, W - 232, 68);
 }
 

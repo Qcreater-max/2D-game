@@ -102,6 +102,10 @@ window.addEventListener('mouseup', e => {
 gameCanvas.addEventListener('contextmenu', e => e.preventDefault());
 
 // 触屏按钮
+// 有些安卓浏览器会谎报 (hover: none)/(pointer: coarse)，所以再用 JS 兜一层：
+// 只要设备有触摸能力就显示虚拟按键、隐藏键盘提示文字。
+window.IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+if (window.IS_TOUCH) document.body.classList.add('touch');
 const touchHeld = new Set();
 function bindBtn(id, ...keys) {
   const el = document.getElementById(id);
@@ -164,11 +168,17 @@ const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
 
 function fitCanvas() {
-  const s = Math.min(window.innerWidth / W, window.innerHeight / H);
+  // 手机浏览器地址栏收起/展开时 innerHeight 不可靠，优先用 visualViewport
+  const vv = window.visualViewport;
+  const vw = vv ? vv.width : window.innerWidth;
+  const vh = vv ? vv.height : window.innerHeight;
+  const s = Math.min(vw / W, vh / H);
   canvas.style.width = Math.floor(W * s) + 'px';
   canvas.style.height = Math.floor(H * s) + 'px';
 }
 window.addEventListener('resize', fitCanvas);
+window.addEventListener('orientationchange', fitCanvas);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fitCanvas);
 fitCanvas();
 
 function frame() {

@@ -2,30 +2,45 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>像素勇士：暗影征途</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="像素勇士">
 <meta name="theme-color" content="#0b0b16">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { width: 100%; height: 100%; background: #07070c; overflow: hidden; font-family: 'Courier New', monospace; }
-  #wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
-  canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; background: #000; border: 2px solid #2a2a4a; }
+  html, body { width: 100%; height: 100%; background: #07070c; overflow: hidden; font-family: 'Courier New', monospace; overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
+  body { touch-action: none; }
+  #wrap { position: fixed; inset: 0; height: 100vh; height: 100dvh; display: flex; align-items: center; justify-content: center; }
+  canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; background: #000; border: 2px solid #2a2a4a; touch-action: none; }
   #hud { position: fixed; inset: 0; pointer-events: none; }
-  .btn { pointer-events: auto; position: absolute; background: rgba(40,40,70,0.65); border: 2px solid #6a6aa0; color: #e0e0ff; border-radius: 10px; user-select: none; display: flex; align-items: center; justify-content: center; font-weight: bold; touch-action: none; }
+  .btn { pointer-events: auto; position: absolute; background: rgba(40,40,70,0.65); border: 2px solid #6a6aa0; color: #e0e0ff; border-radius: 10px; user-select: none; -webkit-user-select: none; display: flex; align-items: center; justify-content: center; font-weight: bold; touch-action: none; }
   .btn:active { background: rgba(100,100,180,0.85); }
   #pad, #act { display: none; }
   @media (hover: none) and (pointer: coarse) { #pad, #act { display: block; } }
-  #dp-left { left: 16px; bottom: 24px; width: 64px; height: 64px; font-size: 24px; }
-  #dp-right { left: 96px; bottom: 24px; width: 64px; height: 64px; font-size: 24px; }
-  #bt-jump { right: 24px; bottom: 100px; width: 68px; height: 68px; border-radius: 50%; }
-  #bt-atk { right: 104px; bottom: 28px; width: 68px; height: 68px; border-radius: 50%; }
-  #bt-act { right: 24px; bottom: 20px; width: 60px; height: 60px; border-radius: 50%; }
-  #bt-inv { right: 12px; top: 12px; width: 44px; height: 44px; font-size: 13px; }
-  #connStatus { position: fixed; top: 6px; right: 10px; color: #80c0ff; font: 12px monospace; z-index: 10; }
+  /* 部分安卓浏览器会谎报 hover/pointer，JS 检测到触摸时也显示虚拟按键 */
+  body.touch #pad, body.touch #act { display: block; }
+  #dp-left { left: calc(16px + env(safe-area-inset-left)); bottom: calc(24px + env(safe-area-inset-bottom)); width: 64px; height: 64px; font-size: 24px; }
+  #dp-right { left: calc(96px + env(safe-area-inset-left)); bottom: calc(24px + env(safe-area-inset-bottom)); width: 64px; height: 64px; font-size: 24px; }
+  #bt-jump { right: calc(24px + env(safe-area-inset-right)); bottom: calc(100px + env(safe-area-inset-bottom)); width: 68px; height: 68px; border-radius: 50%; }
+  #bt-atk { right: calc(104px + env(safe-area-inset-right)); bottom: calc(28px + env(safe-area-inset-bottom)); width: 68px; height: 68px; border-radius: 50%; }
+  #bt-act { right: calc(24px + env(safe-area-inset-right)); bottom: calc(20px + env(safe-area-inset-bottom)); width: 60px; height: 60px; border-radius: 50%; }
+  #bt-inv { right: calc(12px + env(safe-area-inset-right)); top: calc(12px + env(safe-area-inset-top)); width: 44px; height: 44px; font-size: 13px; }
+  #connStatus { position: fixed; top: calc(6px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right)); color: #80c0ff; font: 12px monospace; z-index: 10; }
+  /* 触屏上把状态文字挪到底部中间，别和右上角的目标面板、背包按钮打架 */
+  @media (hover: none) and (pointer: coarse) {
+    #connStatus { top: auto; right: auto; left: 50%; bottom: calc(4px + env(safe-area-inset-bottom)); transform: translateX(-50%); font-size: 11px; }
+  }
+  body.touch #connStatus { top: auto; right: auto; left: 50%; bottom: calc(4px + env(safe-area-inset-bottom)); transform: translateX(-50%); font-size: 11px; }
+  /* 竖屏提示：5 秒后淡出，不挡操作 */
+  #rotateHint { display: none; position: fixed; left: 50%; top: calc(10px + env(safe-area-inset-top)); transform: translateX(-50%); padding: 6px 12px; border-radius: 999px; background: rgba(20,20,40,0.85); border: 1px solid #3a3a6a; color: #c0c8ff; font: 12px monospace; pointer-events: none; z-index: 11; white-space: nowrap; }
+  @media (orientation: portrait) and (pointer: coarse) { #rotateHint { display: block; animation: hintFade 0.6s ease 5s forwards; } }
+  @keyframes hintFade { to { opacity: 0; } }
 </style>
 </head>
 <body>
@@ -43,6 +58,7 @@
   </div>
 </div>
 <div id="connStatus">连接中...</div>
+<div id="rotateHint">↻ 建议横屏游玩</div>
 <script src="sprites.js"></script>
 <script src="render.js"></script>
 <script src="render_world.js"></script>
