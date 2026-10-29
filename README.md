@@ -21,7 +21,9 @@
 
 ## 快速开始
 
-需要 Python 3.13(开发和测试使用的版本)。
+**在线试玩:[https://qcreater-max.github.io/2D-game/](https://qcreater-max.github.io/2D-game/)** — 不用下载、不用装 Python,浏览器打开就能玩。默认是离线模式(引擎已经移植成 JS,在本地运行),手机浏览器也能玩。
+
+想在本地跑 Python 服务器版本,需要 Python 3.13(开发和测试使用的版本)。
 
 ```
 pip install -r requirements.txt
@@ -340,6 +342,7 @@ python -m unittest discover -s tests
 
 默认只监听本机。要让别人访问,有几种方式:
 
+- **GitHub Pages(推荐,纯前端)**:推送到 `main` 后,GitHub Actions 会自动把网页版发布到 [https://qcreater-max.github.io/2D-game/](https://qcreater-max.github.io/2D-game/)。工作流见 `.github/workflows/pages.yml`,只发布 `index.html`、脚本、图标和 `manifest.json`,`server.py` 等源码不会暴露。这是离线模式,没有 WebSocket 服务器。
 - **有云服务器和域名**:把项目上传到 Ubuntu/Debian 服务器,运行 `sudo bash deploy/setup.sh 你的域名`。脚本会创建专用用户、安装依赖、注册 systemd 服务、安装 Caddy 并自动申请 HTTPS 证书,防火墙只开放 22、80、443。游戏本身只监听 `127.0.0.1:8080`,外部访问都经过 Caddy。
 - **局域网**:`python server.py --host 0.0.0.0`,同一个网络里的人访问 `http://你的局域网IP:8080/`,需要在防火墙放行 8080 端口。
 - **临时分享**:用 Cloudflare Tunnel 之类的隧道工具,从自己的电脑生成一个临时公网网址。电脑关机或断网就失效。
