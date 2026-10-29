@@ -1,6 +1,6 @@
 /* Service Worker：缓存所有静态资源，让 PWA 离线也能玩。
    缓存优先、后台更新。改版本号可强制刷新旧缓存。 */
-const CACHE = 'pixel-hero-v4';
+const CACHE = 'pixel-hero-v5';
 const ASSETS = [
   './',
   'index.html',

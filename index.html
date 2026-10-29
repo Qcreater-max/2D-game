@@ -31,6 +31,10 @@
   #bt-atk { right: calc(104px + env(safe-area-inset-right)); bottom: calc(28px + env(safe-area-inset-bottom)); width: 68px; height: 68px; border-radius: 50%; }
   #bt-act { right: calc(24px + env(safe-area-inset-right)); bottom: calc(20px + env(safe-area-inset-bottom)); width: 60px; height: 60px; border-radius: 50%; }
   #bt-inv { right: calc(12px + env(safe-area-inset-right)); top: calc(12px + env(safe-area-inset-top)); width: 44px; height: 44px; font-size: 13px; }
+  #bt-stats { right: calc(12px + env(safe-area-inset-right)); top: calc(64px + env(safe-area-inset-top)); width: 44px; height: 44px; font-size: 12px; }
+  /* 菜单、商店、背包里要上下选择；手机上原来没有这两个键，物品选不了 */
+  #dp-up { left: calc(16px + env(safe-area-inset-left)); bottom: calc(104px + env(safe-area-inset-bottom)); width: 64px; height: 44px; font-size: 16px; }
+  #dp-down { left: calc(96px + env(safe-area-inset-left)); bottom: calc(104px + env(safe-area-inset-bottom)); width: 64px; height: 44px; font-size: 16px; }
   #connStatus { position: fixed; top: calc(6px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right)); color: #80c0ff; font: 12px monospace; z-index: 10; }
   /* 触屏上把状态文字挪到底部中间，别和右上角的目标面板、背包按钮打架 */
   @media (hover: none) and (pointer: coarse) {
@@ -47,11 +51,14 @@
 <div id="wrap"><canvas id="game" width="960" height="540"></canvas></div>
 <div id="hud">
   <div id="pad">
+    <div class="btn" id="dp-up">▲</div>
+    <div class="btn" id="dp-down">▼</div>
     <div class="btn" id="dp-left">◀</div>
     <div class="btn" id="dp-right">▶</div>
   </div>
   <div id="act">
     <div class="btn" id="bt-inv">背包</div>
+    <div class="btn" id="bt-stats">战绩</div>
     <div class="btn" id="bt-jump">跳</div>
     <div class="btn" id="bt-atk">攻</div>
     <div class="btn" id="bt-act">互动</div>

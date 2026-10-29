@@ -116,8 +116,9 @@ function bindBtn(id, ...keys) {
   ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(t => el.addEventListener(t, off, { passive: false }));
 }
 bindBtn('dp-left', 'left'); bindBtn('dp-right', 'right');
+bindBtn('dp-up', 'up'); bindBtn('dp-down', 'down');
 bindBtn('bt-jump', 'jump', 'confirm'); bindBtn('bt-atk', 'attack');
-bindBtn('bt-act', 'interact'); bindBtn('bt-inv', 'inv');
+bindBtn('bt-act', 'interact'); bindBtn('bt-inv', 'inv'); bindBtn('bt-stats', 'stats');
 
 // ---- WebSocket ----
 let ws = null;
